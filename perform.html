@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Perform — Rhymeline</title><meta name="description" content="Perform your verses on the Rhymeline stage.">
+<style>
+  :root{
+    --bg:#0e0d12; --panel:#16141c; --card:#1d1a24; --line:#2c2836;
+    --txt:#f5f1e8; --dim:#a89fb5; --acc:#ff4d6d; --acc2:#f5c518; --good:#4ade80;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  ::selection{background:#ff4d6d;color:#14060a}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#17131f 0%,var(--bg) 60%),var(--bg);
+    color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:17px;line-height:1.5;padding:14px 14px 48px;min-height:100vh;max-width:720px;margin:0 auto}
+  button{transition:transform .08s ease}
+  button:active{transform:scale(.97)}
+
+  /* splash */
+  #splash{position:fixed;inset:0;background:radial-gradient(900px 500px at 50% 30%,#1c1426 0%,#0e0d12 65%);
+    z-index:200;display:flex;align-items:center;justify-content:center;
+    transition:opacity .5s ease;cursor:pointer}
+  #splash.gone{opacity:0;pointer-events:none}
+  .sp-inner{text-align:center;animation:fade .6s ease}
+  .sp-brand{font-size:15px;font-weight:800;letter-spacing:8px;color:var(--dim);margin-bottom:6px}
+  .sp-presents{font-size:13px;color:var(--dim);font-style:italic;margin-bottom:18px}
+  .sp-logo{animation:pulse 1.6s ease-in-out infinite;margin-bottom:14px}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}}
+  .sp-title{font-size:54px;font-weight:900;letter-spacing:6px;color:var(--txt)}
+  .sp-title span{color:var(--acc)}
+  .sp-tag{font-size:16px;color:var(--dim);margin-top:8px;font-style:italic}
+
+  header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .logo{display:flex;align-items:center;gap:9px;white-space:nowrap}
+  .logo .wordmark span{font-size:24px;font-weight:900;letter-spacing:-.5px;color:var(--acc)}
+  .logo .wordmark small{display:block;font-size:9px;font-weight:800;letter-spacing:4px;color:var(--dim);line-height:1}
+  #poemsel{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:12px;font-size:15px;font-weight:700;min-height:50px;max-width:100%}
+  .iconbtn{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:10px;
+    min-width:50px;min-height:50px;font-size:20px;font-weight:800;cursor:pointer}
+  .iconbtn.confirming{color:#ff6b6b;border-color:#ff6b6b}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:4px;margin-bottom:14px;overflow-x:auto}
+  .tabs button{flex:1;border:none;background:none;color:var(--dim);font-size:14px;font-weight:800;
+    padding:10px 8px;border-radius:999px;cursor:pointer;min-height:46px;white-space:nowrap}
+  .tabs button.on{background:var(--acc);color:#14060a}
+  section.phase{display:none}
+  section.phase.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;
+    box-shadow:0 8px 28px rgba(0,0,0,.35)}
+  .hint{font-size:13px;color:var(--dim);margin-top:8px}
+  .bigbtn{background:var(--acc);border:none;color:#14060a;border-radius:14px;padding:16px 26px;
+    font-size:18px;font-weight:900;cursor:pointer;min-height:58px}
+  .ghostbtn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:12px;
+    padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;min-height:50px}
+  .toolrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .toolrow .ghostbtn{flex:1;min-width:120px}
+
+  /* write */
+  #ptitle{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+    padding:14px;font-size:20px;font-weight:800;width:100%;margin-bottom:10px}
+  #ptitle:focus{outline:none;border-color:var(--acc)}
+  #pbody{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+    padding:16px;font-size:19px;line-height:1.7;width:100%;min-height:320px;resize:vertical;font-family:inherit}
+  #pbody:focus{outline:none;border-color:var(--acc)}
+  .stats{display:flex;gap:16px;margin-top:10px;font-size:14px;color:var(--dim);font-weight:600}
+  .stats b{color:var(--txt);font-size:17px}
+  #promptbox{display:none;background:#241a10;border:1px solid #6b5518;border-radius:var(--radius);
+    padding:16px;margin-top:12px}
+  #promptbox.open{display:block;animation:fade .25s ease}
+  #prompttext{font-size:18px;font-weight:600;line-height:1.5;margin-bottom:12px}
+  #promptbox .srow{display:flex;gap:8px}
+  #promptbox .srow button{flex:1;background:#2c2413;border:1px solid #6b5518;color:var(--acc2);
+    border-radius:10px;padding:12px;font-size:15px;font-weight:800;cursor:pointer;min-height:50px}
+
+  /* rehearse */
+  #tdisp{font-size:72px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;
+    letter-spacing:-2px;margin:8px 0}
+  #tdisp.over{color:#ff6b6b}
+  #tnote{text-align:center;color:var(--dim);font-size:14px;margin-bottom:14px;min-height:22px}
+  .timerbtns{display:flex;gap:8px;justify-content:center}
+  .seg{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:4px;margin:18px 0 10px}
+  .seg button{flex:1;border:none;background:none;color:var(--dim);font-size:14px;font-weight:800;
+    padding:10px;border-radius:999px;cursor:pointer;min-height:46px}
+  .seg button.on{background:var(--acc2);color:#140f02}
+  #memolines{display:flex;flex-direction:column;gap:8px}
+  .mline{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    font-size:18px;cursor:pointer;line-height:1.5}
+  .mline.hiddenline{color:transparent;text-shadow:0 0 14px rgba(245,241,232,.55);user-select:none}
+  .mline .cue{color:var(--acc2);font-weight:800}
+  #memoprog{text-align:center;color:var(--dim);font-size:14px;margin-top:10px;font-weight:700}
+
+  /* record */
+  #recdot{width:22px;height:22px;border-radius:50%;background:#ff6b6b;margin:0 auto 6px;
+    animation:blink 1s infinite;display:none}
+  @keyframes blink{50%{opacity:.25}}
+  #recbtn{width:110px;height:110px;border-radius:50%;border:3px solid var(--acc);background:none;
+    color:var(--txt);font-size:16px;font-weight:900;cursor:pointer;display:block;margin:14px auto}
+  #recbtn.live{background:var(--acc);color:#14060a;border-color:var(--acc)}
+  #rectime{text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+  .take{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .take .tmeta{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .take audio{width:100%}
+  .take .tdel{background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+    padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px}
+  .empty{color:var(--dim);font-size:16px;text-align:center;padding:32px 16px;border:1px dashed var(--line);
+    border-radius:var(--radius);line-height:1.6}
+
+  /* score */
+  #total{font-size:64px;font-weight:900;text-align:center;color:var(--acc2);font-variant-numeric:tabular-nums}
+  #totallabel{text-align:center;color:var(--dim);font-size:14px;margin-bottom:16px}
+  .crit{margin-bottom:14px}
+  .crit .clabel{font-size:15px;font-weight:800;margin-bottom:8px;display:flex;justify-content:space-between}
+  .crit .clabel b{color:var(--acc2);font-size:20px}
+  .crit .cdesc{font-size:13px;color:var(--dim);margin-bottom:8px}
+  .stepper{display:flex;align-items:center;gap:12px}
+  .stepper button{width:56px;height:56px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+    color:var(--txt);font-size:24px;font-weight:900;cursor:pointer}
+  .stepper .val{flex:1;text-align:center;font-size:32px;font-weight:900;font-variant-numeric:tabular-nums}
+  .scorehist{margin-top:6px}
+  .shist{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+    margin-bottom:8px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+  .shist.best{border-color:var(--acc2)}
+  .shist .sdel{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer;padding:8px}
+
+  /* craft */
+  .tip{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+  .tip h3{font-size:18px;margin-bottom:6px;color:var(--acc)}
+  .tip p{font-size:16px;color:var(--dim);line-height:1.55}
+  .tip p b{color:var(--txt)}
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:24px;background:#23232e;
+    border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:12px 18px;font-size:15px;
+    font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99}
+  #toast.open{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{margin-top:22px;color:var(--dim);font-size:13px;text-align:center}
+
+  /* ============ NEON POLISH ============ */
+  .sp-logo svg{filter:drop-shadow(0 0 10px rgba(255,77,109,.9)) drop-shadow(0 0 34px rgba(255,77,109,.4))}
+  .sp-title{text-shadow:0 0 14px rgba(255,77,109,.65),0 0 60px rgba(255,77,109,.3)}
+  .sp-brand{text-shadow:0 0 12px rgba(168,159,181,.8)}
+  .logo svg{filter:drop-shadow(0 0 6px rgba(255,77,109,.85))}
+  .logo .wordmark span{text-shadow:0 0 10px rgba(255,77,109,.55)}
+  .tabs button.on{box-shadow:0 0 12px rgba(255,77,109,.75),0 0 34px rgba(255,77,109,.3)}
+  .bigbtn{box-shadow:0 0 14px rgba(255,77,109,.55),0 0 44px rgba(255,77,109,.22)}
+  .bigbtn:active{box-shadow:0 0 6px rgba(255,77,109,.5)}
+  #ptitle:focus,#pbody:focus{box-shadow:0 0 0 1px var(--acc),0 0 18px rgba(255,77,109,.35)}
+  #tdisp{text-shadow:0 0 16px rgba(245,197,24,.6),0 0 70px rgba(245,197,24,.28)}
+  #tdisp.over{animation:overpulse 1s ease-in-out infinite}
+  @keyframes overpulse{0%,100%{text-shadow:0 0 16px rgba(255,107,107,.8),0 0 60px rgba(255,107,107,.35)}
+    50%{text-shadow:0 0 26px rgba(255,107,107,1),0 0 90px rgba(255,107,107,.55)}}
+  #recbtn.live{box-shadow:0 0 18px rgba(255,77,109,.9),0 0 70px rgba(255,77,109,.4);animation:recring 1.4s ease-in-out infinite}
+  @keyframes recring{0%,100%{box-shadow:0 0 18px rgba(255,77,109,.9),0 0 70px rgba(255,77,109,.4)}
+    50%{box-shadow:0 0 30px rgba(255,77,109,1),0 0 110px rgba(255,77,109,.6)}}
+  #recdot{box-shadow:0 0 10px rgba(255,107,107,1),0 0 26px rgba(255,107,107,.6)}
+  #total{text-shadow:0 0 14px rgba(245,197,24,.5)}
+  #total.hot{text-shadow:0 0 18px rgba(245,197,24,.95),0 0 70px rgba(245,197,24,.45);animation:hotpop .5s ease}
+  @keyframes hotpop{0%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .tip{border-left:3px solid var(--acc)}
+  .tip h3{text-shadow:0 0 10px rgba(255,77,109,.5)}
+  .seg button.on{box-shadow:0 0 10px rgba(245,197,24,.6)}
+  .mline.hiddenline{border-color:var(--acc2);box-shadow:inset 0 0 18px rgba(139,123,255,.12)}
+  #toast{box-shadow:0 0 18px rgba(0,0,0,.6),0 0 30px rgba(255,77,109,.15)}
+  .take{transition:border-color .2s ease}
+  .iconbtn:active,.ghostbtn:active,.toolrow .ghostbtn:active{transform:scale(.95)}
+
+  /* ============ RHYME ============ */
+  #rhymebar{display:flex;gap:8px;margin-bottom:12px}
+  #rhymebar input{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    border-radius:12px;padding:16px;font-size:19px}
+  #rhymebar input:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 1px var(--acc2),0 0 22px rgba(245,197,24,.35)}
+  #rhymebar button{background:var(--acc2);border:none;color:#140f02;border-radius:12px;padding:0 26px;
+    font-size:17px;font-weight:900;cursor:pointer;min-height:58px;box-shadow:0 0 14px rgba(245,197,24,.5)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chips button{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:999px;
+    padding:10px 18px;font-size:15px;font-weight:700;cursor:pointer;min-height:48px}
+  .chips button:active{border-color:var(--acc2);color:var(--acc2)}
+  .chainline{display:flex;align-items:baseline;gap:14px;padding:12px 4px;border-bottom:1px solid var(--line);animation:fade .3s ease}
+  .chainline:last-child{border:none}
+  .chainline .num{color:var(--acc2);font-weight:900;font-size:14px;text-shadow:0 0 8px rgba(245,197,24,.6)}
+  .chainline .w{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .scheme{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    margin-bottom:10px;display:flex;align-items:center;gap:14px;animation:fade .35s ease both}
+  .scheme .pat{font-size:22px;font-weight:900;letter-spacing:3px;color:var(--acc2);
+    text-shadow:0 0 10px rgba(245,197,24,.55);white-space:nowrap}
+  .scheme .meta{flex:1}
+  .scheme .meta b{font-size:16px}
+  .scheme .meta div{font-size:13px;color:var(--dim)}
+  .scheme button{background:none;border:1px solid var(--line);color:var(--txt);border-radius:10px;
+    padding:10px 20px;font-size:14px;font-weight:800;cursor:pointer;min-height:50px}
+  .tip{animation:fade .4s ease both}
+</style>
+</head>
+<body><a href="/" style="position:fixed;top:10px;left:10px;z-index:9999;padding:7px 14px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font:600 13px system-ui;text-decoration:none;border:1px solid rgba(255,255,255,.25)">✍️ Back to Write</a>
+
+<div id="splash">
+  <div class="sp-inner">
+    <div class="sp-brand">LEONLINK</div>
+    <div class="sp-presents">presents</div>
+    <div class="sp-logo">
+      <svg viewBox="0 0 64 64" width="76" height="76">
+        <rect x="25" y="4" width="14" height="28" rx="7" fill="#ff4d6d"/>
+        <path d="M18 30 v6 a14 14 0 0 0 28 0 v-6" fill="none" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+        <line x1="32" y1="50" x2="32" y2="55" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+        <line x1="24" y1="57" x2="40" y2="57" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="sp-title"><span>S</span>TAGE</div>
+    <div class="sp-tag">speak it.</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 64 64" width="30" height="30">
+      <rect x="25" y="4" width="14" height="28" rx="7" fill="#ff4d6d"/>
+      <path d="M18 30 v6 a14 14 0 0 0 28 0 v-6" fill="none" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+      <line x1="32" y1="50" x2="32" y2="55" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+      <line x1="24" y1="57" x2="40" y2="57" stroke="#ff4d6d" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="wordmark"><span>Stage</span><small>LEONLINK</small></div>
+  </div>
+  <select id="poemsel" onchange="switchPoem(this.value)"></select>
+  <button class="iconbtn" onclick="newPoem()" title="New poem">＋</button>
+  <button class="iconbtn" id="pdel" onclick="delPoem(this)" title="Delete poem">✕</button>
+</header>
+
+<div class="tabs">
+  <button id="tab-w" class="on" onclick="go('write')">Write</button>
+  <button id="tab-r" onclick="go('rehearse')">Rehearse</button>
+  <button id="tab-rec" onclick="go('record')">Record</button>
+  <button id="tab-y" onclick="go('rhyme')">Rhyme</button>
+  <button id="tab-s" onclick="go('score')">Score</button>
+  <button id="tab-c" onclick="go('craft')">Craft</button>
+</div>
+
+<!-- ============ WRITE ============ -->
+<section id="phase-write" class="phase on">
+  <div class="panel">
+    <input id="ptitle" placeholder="Title" oninput="P.title=this.value;save();renderPoemList()">
+    <textarea id="pbody" placeholder="Write it like you speak it.&#10;&#10;Line breaks are breaths." oninput="P.body=this.value;save();updateStats()"></textarea>
+    <div class="stats"><span><b id="st-words">0</b> words</span><span><b id="st-time">0:00</b> spoken</span><span><b id="st-lines">0</b> lines</span></div>
+    <div class="toolrow">
+      <button class="ghostbtn" onclick="insertPause()">‖ Pause</button>
+      <button class="ghostbtn" onclick="togglePrompt()">✨ Prompt</button>
+    </div>
+    <div id="promptbox">
+      <div id="prompttext"></div>
+      <div class="srow"><button onclick="newPrompt()">Another</button><button onclick="togglePrompt()">Close</button></div>
+    </div>
+    <div class="hint">Line breaks are breaths. ‖ marks a beat of silence.</div>
+  </div>
+</section>
+
+<!-- ============ REHEARSE ============ -->
+<section id="phase-rehearse" class="phase">
+  <div class="panel">
+    <div id="tdisp">3:00</div>
+    <div id="tnote">Slam limit. 10s grace.</div>
+    <div class="timerbtns">
+      <button class="bigbtn" id="tbtn" onclick="toggleTimer()">Start</button>
+      <button class="ghostbtn" onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="seg" id="memoseg">
+      <button class="on" onclick="setMemo('full')">Full</button>
+      <button onclick="setMemo('cues')">Cues</button>
+      <button onclick="setMemo('hidden')">Hidden</button>
+    </div>
+    <div id="memolines"></div>
+    <div id="memoprog"></div>
+    <div class="hint" style="margin-top:10px">Memorizing forces the edit. Tap hidden lines to peek.</div>
+  </div>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section id="phase-record" class="phase">
+  <div class="panel" style="text-align:center">
+    <div id="recdot"></div>
+    <button id="recbtn" onclick="toggleRec()">●<br>REC</button>
+    <div id="rectime">0:00</div>
+    <div class="hint">Takes save to this poem, on this device.</div>
+  </div>
+  <div id="takes"></div>
+</section>
+
+<!-- ============ RHYME ============ -->
+<section id="phase-rhyme" class="phase">
+  <div class="panel">
+    <div id="rhymebar">
+      <input id="rword" placeholder="a word…" autocomplete="off" onkeydown="if(event.key==='Enter')doRhyme()">
+      <button onclick="doRhyme()">Rhyme</button>
+    </div>
+    <div class="seg" id="chainseg">
+      <button class="on" onclick="setChain(2,this)">2</button>
+      <button onclick="setChain(3,this)">3</button>
+      <button onclick="setChain(4,this)">4</button>
+      <button onclick="setChain(5,this)">5</button>
+    </div>
+    <div id="chainout"></div>
+    <div class="toolrow" id="chainactions" style="display:none">
+      <button class="ghostbtn" onclick="shuffleChain()">Shuffle</button>
+      <button class="ghostbtn" onclick="insertChain()">＋ Poem</button>
+    </div>
+    <div id="rhymeout" class="chips"></div>
+  </div>
+  <div class="panel">
+    <div class="hint" style="margin:0 0 12px">RHYME SCHEMES</div>
+    <div id="schemes"></div>
+  </div>
+</section>
+
+<!-- ============ SCORE ============ -->
+<section id="phase-score" class="phase">
+  <div class="panel">
+    <div id="total">0</div>
+    <div id="totallabel">/ 30 — slam scale</div>
+    <div class="crit">
+      <div class="clabel">Content <b id="v-c">5</b></div>
+      <div class="cdesc">Words, images, structure.</div>
+      <div class="stepper"><button onclick="step('c',-1)">−</button><div class="val" id="sv-c">5</div><button onclick="step('c',1)">＋</button></div>
+    </div>
+    <div class="crit">
+      <div class="clabel">Delivery <b id="v-d">5</b></div>
+      <div class="cdesc">Voice, pace, presence.</div>
+      <div class="stepper"><button onclick="step('d',-1)">−</button><div class="val" id="sv-d">5</div><button onclick="step('d',1)">＋</button></div>
+    </div>
+    <div class="crit">
+      <div class="clabel">Impact <b id="v-i">5</b></div>
+      <div class="cdesc">Did it land?</div>
+      <div class="stepper"><button onclick="step('i',-1)">−</button><div class="val" id="sv-i">5</div><button onclick="step('i',1)">＋</button></div>
+    </div>
+    <button class="bigbtn" style="width:100%" onclick="saveScore()">Save score</button>
+  </div>
+  <div class="panel">
+    <div class="scorehist" id="scorehist"><div class="empty">No scores yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ CRAFT ============ -->
+<section id="phase-craft" class="phase">
+  <div id="tips"></div>
+</section>
+
+<div id="toast"></div>
+<footer>A Leonlink production · one file · offline · auto-saves.</footer>
+
+<script>
+/* ---------- prompts: writer's-block fuel ---------- */
+const PROMPTS=[
+"Write about the thing you never say out loud.",
+"Start every line with 'I remember'.",
+"A letter to your younger self. Read it angry.",
+"What does your city sound like at 3am?",
+"Defend something everyone hates.",
+"Write the argument you wish you'd won.",
+"Describe a scar. Don't say how you got it until the end.",
+"Your mother's hands. Go.",
+"What would you scream if no one could hear?",
+"A love poem to something unlovable.",
+"Start with 'They told me' and prove them wrong.",
+"The last time you cried. Make it funny first.",
+"Write about home in two languages, even if one is made up.",
+"An apology you'll never deliver.",
+"What are you afraid they'll find out?",
+"Make the audience snap on line three.",
+"Your name, said by someone who loves you. By someone who doesn't.",
+"End with the first line you thought of. Earn it."
+];
+/* ---------- craft tips: from the research ---------- */
+const TIPS=[
+["Slow down.","If it sounds slow to <b>you</b>, it's just right for them. Rushing is the #1 beginner fail."],
+["Memorize it.","Reading off paper signals 'passing familiarity.' Memorizing <b>forces the edit</b> — you'll cut everything but the essentials."],
+["Breath breaks.","Write line units for the <b>oral voice</b>, not print stanzas. Break where you breathe."],
+["Repeat on purpose.","Refrains lodge in memory like nursery rhymes. <b>Anaphora</b> — same opener, line after line — builds urgency."],
+["Talk to them.","Direct address. Call-and-response. Eye contact. The room is part of the poem."],
+["Cut the clunky.","Test every line by ear. If it trips your tongue, it dies on stage. Fewer words, more said."],
+["3 minutes.","Slam limit: 3:00, 10 seconds grace. Time it. Then cut 20 seconds anyway."],
+["Freestyle mistakes.","You will blank. Keep moving — the audience forgets what you don't feed."]
+];
+
+/* ---------- state ---------- */
+const KEY='stage-v1';
+let DB;
+try{ DB=JSON.parse(localStorage.getItem(KEY))||null; }catch(e){ DB=null; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function blankPoem(){ return {id:uid(),title:'',body:'',takes:[],scores:[],updatedAt:Date.now()}; }
+if(!DB||!Array.isArray(DB.poems)){ DB={poems:[blankPoem()],cur:null}; }
+if(!DB.poems.length) DB.poems.push(blankPoem());
+DB.cur=DB.poems.find(p=>p.id===DB.cur)?DB.cur:DB.poems[0].id;
+let P=DB.poems.find(p=>p.id===DB.cur);
+function save(){ P.updatedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){ toast('Storage full — oldest takes may need deleting.'); } }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('open');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('open'),3500); }
+
+/* ---------- nav ---------- */
+const TABS={write:'tab-w',rehearse:'tab-r',record:'tab-rec',rhyme:'tab-y',score:'tab-s',craft:'tab-c'};
+let phase='write';
+function go(p){
+  phase=p;
+  document.querySelectorAll('section.phase').forEach(s=>s.classList.remove('on'));
+  document.getElementById('phase-'+p).classList.add('on');
+  Object.values(TABS).forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById(TABS[p]).classList.add('on');
+  if(p==='rehearse') renderMemo();
+  if(p==='record') renderTakes();
+  if(p==='score') renderScores();
+  window.scrollTo(0,0);
+}
+
+/* ---------- poems ---------- */
+function renderPoemList(){
+  const sel=document.getElementById('poemsel'); sel.innerHTML='';
+  DB.poems.forEach(p=>{
+    const o=document.createElement('option'); o.value=p.id;
+    o.textContent=(p.title||'Untitled')+' ('+p.body.split(/\s+/).filter(Boolean).length+'w)';
+    if(p.id===P.id) o.selected=true; sel.appendChild(o);
+  });
+}
+function switchPoem(id){
+  P=DB.poems.find(p=>p.id===id)||P; DB.cur=P.id; save(); loadPoem(); go('write');
+}
+function newPoem(){
+  const p=blankPoem(); DB.poems.unshift(p); P=p; DB.cur=p.id; save();
+  renderPoemList(); loadPoem(); go('write');
+  document.getElementById('ptitle').focus();
+}
+function delPoem(btn){
+  if(DB.poems.length<=1) return;
+  if(btn.classList.contains('confirming')){
+    DB.poems=DB.poems.filter(p=>p.id!==P.id);
+    btn.classList.remove('confirming'); btn.textContent='✕';
+    switchPoem(DB.poems[0].id);
+  } else { btn.classList.add('confirming'); btn.textContent='?';
+    setTimeout(()=>{btn.classList.remove('confirming');btn.textContent='✕';},2500); }
+}
+function loadPoem(){
+  document.getElementById('ptitle').value=P.title||'';
+  document.getElementById('pbody').value=P.body||'';
+  updateStats(); renderPoemList();
+}
+
+/* ---------- write ---------- */
+function updateStats(){
+  const words=P.body.split(/\s+/).filter(Boolean).length;
+  const lines=P.body.split('\n').filter(l=>l.trim()).length;
+  const secs=Math.round(words/130*60);
+  document.getElementById('st-words').textContent=words;
+  document.getElementById('st-lines').textContent=lines;
+  document.getElementById('st-time').textContent=Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');
+}
+function insertPause(){
+  const ta=document.getElementById('pbody');
+  const s=ta.selectionStart||ta.value.length, e=ta.selectionEnd||s;
+  ta.value=ta.value.slice(0,s)+' ‖ '+ta.value.slice(e);
+  ta.focus(); ta.selectionStart=ta.selectionEnd=s+3;
+  P.body=ta.value; save(); updateStats();
+}
+let promptIdx=-1;
+function togglePrompt(){
+  const b=document.getElementById('promptbox'); const open=b.classList.toggle('open');
+  if(open) newPrompt();
+}
+function newPrompt(){
+  let i; do{ i=Math.floor(Math.random()*PROMPTS.length); }while(i===promptIdx);
+  promptIdx=i; document.getElementById('prompttext').textContent=PROMPTS[i];
+}
+
+/* ---------- rehearse: slam timer ---------- */
+let tInt=null, tLeft=180;
+function fmt(s){ s=Math.max(0,s); return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'); }
+function tick(){
+  const d=document.getElementById('tdisp'), n=document.getElementById('tnote');
+  d.textContent=fmt(tLeft);
+  if(tLeft<0){ d.textContent='OVER'; d.classList.add('over'); n.textContent='Past grace. Cut it.'; stopTick(); return; }
+  d.classList.toggle('over',tLeft<=0);
+  n.textContent=tLeft<=0?'Grace — 10 seconds.':(tLeft<=30?'Last 30. Land it.':'Slam limit. 10s grace.');
+}
+function toggleTimer(){
+  const b=document.getElementById('tbtn');
+  if(tInt){ stopTick(); b.textContent='Resume'; return; }
+  if(tLeft<0) tLeft=180; /* expired — fresh 3:00 */
+  b.textContent='Stop';
+  tInt=setInterval(()=>{ tLeft--; tick(); },1000);
+}
+function stopTick(){ if(tInt)clearInterval(tInt); tInt=null; }
+function resetTimer(){ stopTick(); tLeft=180; document.getElementById('tbtn').textContent='Start'; tick(); }
+
+/* ---------- rehearse: memorization trainer ---------- */
+let memoMode='full', memoRevealed=new Set();
+function setMemo(m){
+  memoMode=m; memoRevealed=new Set();
+  document.querySelectorAll('#memoseg button').forEach(b=>b.classList.toggle('on',b.textContent.toLowerCase()===m||(m==='cues'&&b.textContent==='Cues')||(m==='hidden'&&b.textContent==='Hidden')));
+  renderMemo();
+}
+function renderMemo(){
+  const box=document.getElementById('memolines'); box.innerHTML='';
+  const lines=P.body.split('\n');
+  let shown=0;
+  lines.forEach((ln,i)=>{
+    if(!ln.trim()) return; shown++;
+    const d=document.createElement('div'); d.className='mline';
+    if(memoMode==='cues'){
+      const words=ln.trim().split(/\s+/).slice(0,3).join(' ');
+      d.innerHTML='<span class="cue">'+esc(words)+'</span> …';
+    } else if(memoMode==='hidden'&&!memoRevealed.has(i)){
+      d.classList.add('hiddenline'); d.textContent=ln;
+      d.onclick=()=>{ memoRevealed.add(i); renderMemo(); };
+    } else { d.textContent=ln; }
+    box.appendChild(d);
+  });
+  document.getElementById('memoprog').textContent=shown?shown+' lines':'Write something first.';
+  if(!shown) box.innerHTML='<div class="empty">Nothing to memorize yet.</div>';
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ---------- record ---------- */
+let mr=null, chunks=[], recInt=null, recSecs=0, recStream=null;
+function fmtR(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+async function toggleRec(){
+  const b=document.getElementById('recbtn');
+  if(mr&&mr.state==='recording'){ stopRec(); return; }
+  try{
+    recStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(e){ toast('Mic blocked — allow microphone access.'); return; }
+  chunks=[];
+  try{ mr=new MediaRecorder(recStream); }
+  catch(e){ toast('Recording not supported here.'); recStream.getTracks().forEach(t=>t.stop()); return; }
+  mr.ondataavailable=e=>{ if(e.data.size)chunks.push(e.data); };
+  mr.onstop=()=>{
+    recStream.getTracks().forEach(t=>t.stop());
+    const blob=new Blob(chunks,{type:mr.mimeType||'audio/webm'});
+    const fr=new FileReader();
+    fr.onload=()=>{
+      P.takes.unshift({id:uid(),ts:Date.now(),dur:recSecs,url:fr.result});
+      recSecs=0; renderTakes(); save(); /* render first: UI updates even if storage is full */
+    };
+    fr.readAsDataURL(blob);
+  };
+  mr.start(); recSecs=0;
+  document.getElementById('rectime').textContent='0:00';
+  document.getElementById('recdot').style.display='block';
+  b.classList.add('live'); b.innerHTML='■<br>STOP';
+  recInt=setInterval(()=>{ recSecs++; document.getElementById('rectime').textContent=fmtR(recSecs);
+    if(recSecs>=300){ stopRec(); toast('5 min max per take.'); } },1000);
+}
+function stopRec(){
+  if(mr&&mr.state==='recording') mr.stop();
+  clearInterval(recInt); recInt=null;
+  document.getElementById('recdot').style.display='none';
+  const b=document.getElementById('recbtn'); b.classList.remove('live'); b.innerHTML='●<br>REC';
+}
+function renderTakes(){
+  const box=document.getElementById('takes'); box.innerHTML='';
+  if(!P.takes.length){ box.innerHTML='<div class="empty">No takes yet.<br>Hit REC and perform it.</div>'; return; }
+  P.takes.forEach(t=>{
+    const d=document.createElement('div'); d.className='take';
+    const dt=new Date(t.ts);
+    d.innerHTML='<div class="tmeta"><span>'+dt.toLocaleDateString()+' · '+fmtR(t.dur)+'</span></div>';
+    const au=document.createElement('audio'); au.controls=true; au.src=t.url;
+    d.appendChild(au);
+    const row=document.createElement('div'); row.style.marginTop='8px';
+    const del=document.createElement('button'); del.className='tdel'; del.textContent='Delete take';
+    del.onclick=()=>{ P.takes=P.takes.filter(x=>x.id!==t.id); save(); renderTakes(); };
+    row.appendChild(del); d.appendChild(row);
+    box.appendChild(d);
+  });
+}
+
+/* ---------- score: slam rubric ---------- */
+let sc={c:5,d:5,i:5};
+function step(k,delta){
+  sc[k]=Math.min(10,Math.max(0,sc[k]+delta));
+  document.getElementById('v-'+k).textContent=sc[k];
+  document.getElementById('sv-'+k).textContent=sc[k];
+  const tot=sc.c+sc.d+sc.i;
+  const t=document.getElementById('total');
+  t.textContent=tot;
+  const was=t.classList.contains('hot'), is=tot>=24;
+  t.classList.toggle('hot',is);
+  if(is&&!was){ t.classList.remove('hot'); void t.offsetWidth; t.classList.add('hot'); }
+}
+function saveScore(){
+  P.scores.unshift({id:uid(),ts:Date.now(),c:sc.c,d:sc.d,i:sc.i});
+  save(); renderScores(); toast('Scored '+(sc.c+sc.d+sc.i)+' / 30.');
+}
+function renderScores(){
+  const box=document.getElementById('scorehist'); box.innerHTML='';
+  if(!P.scores.length){ box.innerHTML='<div class="empty">No scores yet.</div>'; return; }
+  const best=Math.max(...P.scores.map(s=>s.c+s.d+s.i));
+  P.scores.slice(0,10).forEach(s=>{
+    const tot=s.c+s.d+s.i;
+    const d=document.createElement('div'); d.className='shist'+(tot===best?' best':'');
+    const dt=new Date(s.ts);
+    d.innerHTML='<span><b>'+tot+'</b> / 30 <span style="color:var(--dim);font-size:13px">'+dt.toLocaleDateString()+' · C'+s.c+' D'+s.d+' I'+s.i+'</span></span>';
+    const del=document.createElement('button'); del.className='sdel'; del.textContent='✕';
+    del.onclick=()=>{ P.scores=P.scores.filter(x=>x.id!==s.id); save(); renderScores(); };
+    d.appendChild(del); box.appendChild(d);
+  });
+}
+
+/* ---------- craft ---------- */
+function renderTips(){
+  const box=document.getElementById('tips'); box.innerHTML='';
+  TIPS.forEach(([h,p],i)=>{
+    const d=document.createElement('div'); d.className='tip';
+    d.style.animationDelay=(i*0.05)+'s';
+    d.innerHTML='<h3>'+h+'</h3><p>'+p+'</p>';
+    box.appendChild(d);
+  });
+}
+
+/* ---------- rhyme families ---------- */
+const RHYME_FAMS=[
+["fire","desire","higher","wire","liar","choir","buyer","flyer"],
+["night","light","flight","bright","right","sight","tight","fight","delight","tonight"],
+["heart","apart","start","smart","art","part","restart","depart"],
+["dark","park","mark","spark","stark","shark","embark"],
+["alone","stone","home","phone","tone","known","blown","throne"],
+["rain","pain","again","chain","insane","remain","explain","strain","gain"],
+["love","above","dove","glove","shove"],
+["time","rhyme","chime","climb","crime","prime","sublime","mime"],
+["dream","scream","stream","team","gleam","theme","seem","redeem"],
+["sky","high","fly","cry","try","why","lie","sigh","die","goodbye"],
+["sea","free","be","me","tree","see","key","degree"],
+["deep","sleep","keep","weep","steep","sweep","cheap","creep"],
+["cold","old","gold","bold","sold","told","hold","unfold"],
+["wild","child","mild","styled","piled","beguiled"],
+["song","long","wrong","strong","belong","prolong"],
+["breath","death"],
+["ground","sound","around","found","bound","profound","unbound"],
+["crown","down","town","brown","now","how","frown","drown","renown","wow"],
+["face","place","space","grace","chase","trace","embrace","replace"],
+["door","more","floor","sore","pour","roar","before","explore","ignore"],
+["window","shadow","meadow","fellow","yellow","mellow"],
+["eyes","skies","cries","lies","sighs","tries","disguise","sunrise"],
+["hands","lands","stands","demands","commands"],
+["name","game","same","flame","shame","claim","frame","blame","tame"],
+["blood","flood","mud","thud"],
+["thunder","wonder","under","blunder","asunder"],
+["ghost","most","host","toast","coast","boast"],
+["river","giver","shiver","deliver"],
+["forever","never","clever","whatever","endeavor","ever"],
+["remember","december","ember","member","surrender"],
+["ashes","flashes","crashes","lashes"],
+["dust","rust","trust","just","must","gust"],
+["broken","token","spoken","woken","unspoken"],
+["silence","violence","defiance"],
+["whisper","sister","mister","blister","twister"],
+["mother","brother","other","another","smother"],
+["father","rather","gather"],
+["youth","truth","uncouth"],
+["hello","yellow"],
+["street","meet","feet","sweet","heat","beat","complete","retreat","discreet","defeat"],
+["city","pretty","gritty","witty","pity"],
+["star","far","scar","car","guitar","bizarre","bar"],
+["moon","soon","tune","afternoon","balloon","croon"],
+["sun","run","fun","done","one","begun","undone"],
+["day","way","say","play","stay","away","decay","sway"],
+["tomorrow","sorrow","borrow","follow","hollow"],
+["tears","fears","years","hears","peers"],
+["smile","while","mile","style","exile","beguile"],
+["laugh","half","calf","staff"],
+["lonely","only","holy","slowly"],
+["empty","plenty"],
+["hunger","younger"],
+["brave","wave","save","grave","crave","cave","rave"],
+["cage","rage","stage","page","age","wage","engage"],
+["word","heard","bird","blurred","absurd","third"],
+["verse","worse","curse","nurse","universe"],
+["mic","like","strike","spike","alike","bike"],
+["voice","choice","rejoice","noise"],
+["loud","crowd","proud","cloud","shroud","allowed"],
+["quiet","riot","diet"],
+["dance","chance","glance","trance","romance","advance"],
+["flow","glow","grow","know","show","slow","blow","below","ago"],
+["king","ring","sing","bring","spring","wing","sting","thing","fling"],
+["queen","green","keen","seen","serene","between","machine"],
+["shield","field","yield","wield"],
+["history","mystery","misery"],
+["story","glory"],
+["hero","zero"],
+["angel","danger","stranger"],
+["devil","level","revel"],
+["heaven","seven","eleven"],
+["hell","well","tell","sell","dwell","farewell","yell","shell"],
+["prayer","air","care","share","dare","aware","despair","repair","affair"],
+["hope","rope","cope","slope"],
+["doubt","about","shout","out","without","drought"],
+["when","then","pen","ten","amen","den"],
+["still","will","fill","hill","chill","thrill"],
+["end","bend","send","friend","lend","defend","trend"],
+["middle","riddle","little","brittle"],
+["vow","now","how"],
+["battle","rattle"],
+["concrete","discrete"]
+];
+const SCHEMES=[
+["Couplet","AA","two lines, one rhyme"],
+["Tercet","AAA","three of a kind"],
+["AABB","AABB","two couplets, back to back"],
+["ABAB","ABAB","alternating"],
+["ABBA","ABBA","envelope"],
+["Ballad","ABCB","only lines 2 and 4 rhyme"],
+["Limerick","AABBA","five lines, bouncy"]
+];
+function findRhymes(word){
+  word=word.toLowerCase().trim(); if(!word) return [];
+  for(const fam of RHYME_FAMS){ if(fam.includes(word)) return fam.filter(w=>w!==word); }
+  const end=word.slice(-3), hits=[];
+  for(const fam of RHYME_FAMS) for(const w of fam){
+    if(w!==word&&w.slice(-3)===end&&!hits.includes(w)) hits.push(w);
+  }
+  return hits.slice(0,24);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+let chainN=2, chainWords=[], chainSeed='';
+function setChain(n,btn){
+  chainN=n;
+  document.querySelectorAll('#chainseg button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(chainSeed) buildChain(chainSeed);
+}
+function doRhyme(){
+  const w=document.getElementById('rword').value.trim().toLowerCase();
+  if(!w) return;
+  chainSeed=w;
+  const rh=findRhymes(w);
+  const out=document.getElementById('rhymeout'); out.innerHTML='';
+  if(!rh.length){ out.innerHTML='<div class="empty">No rhymes found. Try another.</div>'; }
+  rh.forEach(r=>{
+    const b=document.createElement('button'); b.textContent=r;
+    b.onclick=()=>{ document.getElementById('rword').value=r; doRhyme(); };
+    out.appendChild(b);
+  });
+  buildChain(w);
+}
+function buildChain(w){
+  const pool=shuffle(findRhymes(w).slice());
+  chainWords=[w,...pool].slice(0,chainN);
+  const box=document.getElementById('chainout'); box.innerHTML='';
+  chainWords.forEach((cw,i)=>{
+    const d=document.createElement('div'); d.className='chainline';
+    d.innerHTML='<span class="num">'+(i+1)+'</span><span class="w">'+esc(cw)+'</span>';
+    box.appendChild(d);
+  });
+  document.getElementById('chainactions').style.display=chainWords.length?'flex':'none';
+}
+function shuffleChain(){ if(chainSeed) buildChain(chainSeed); }
+function insertChain(){
+  if(!chainWords.length) return;
+  P.body=(P.body?P.body.replace(/\s+$/,'')+'\n':'')+chainWords.join('\n');
+  save(); loadPoem(); toast('In the poem.');
+}
+function renderSchemes(){
+  const box=document.getElementById('schemes'); box.innerHTML='';
+  SCHEMES.forEach(([n,s,d],i)=>{
+    const el=document.createElement('div'); el.className='scheme';
+    el.style.animationDelay=(i*0.05)+'s';
+    el.innerHTML='<div class="pat">'+s+'</div><div class="meta"><b>'+n+'</b><div>'+d+'</div></div>';
+    const b=document.createElement('button'); b.textContent='Use';
+    b.onclick=()=>useScheme(s);
+    el.appendChild(b); box.appendChild(el);
+  });
+}
+function useScheme(s){
+  const lines=s.split('').map(ch=>'('+ch+') ').join('\n');
+  P.body=(P.body?P.body.replace(/\s+$/,'')+'\n\n':'')+lines;
+  save(); loadPoem(); toast('Scheme in. Fill it.');
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown',e=>{
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea') return;
+  if(e.key==='/'){ e.preventDefault(); go('write'); document.getElementById('pbody').focus(); }
+});
+
+/* ---------- init ---------- */
+renderPoemList(); loadPoem(); renderTips(); renderSchemes(); resetTimer();
+go('write');
+(function(){
+  const sp=document.getElementById('splash');
+  const hide=()=>sp.classList.add('gone');
+  sp.addEventListener('click',hide);
+  setTimeout(hide,1600);
+})();
+</script>
+</body>
+</html>
